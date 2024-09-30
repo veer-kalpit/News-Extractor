@@ -8,7 +8,7 @@ const PORT = 5000;
 app.use(cors());
 
 // Route to get news data
-app.get("/api/news", async (req, res) => {
+app.get("", async (req, res) => {
   const articles = await getNews();
   res.json(articles);
 });

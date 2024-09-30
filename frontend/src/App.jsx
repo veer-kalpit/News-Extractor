@@ -28,7 +28,15 @@ const App = () => {
 
   useEffect(() => {
     const handleVoiceChange = () => {
-      const availableVoices = speechSynthesis.getVoices();
+      let availableVoices = speechSynthesis.getVoices();
+
+      // Voices might not be available immediately, so retry if empty
+      if (availableVoices.length === 0) {
+        // Retry after 100ms
+        setTimeout(handleVoiceChange, 100);
+        return;
+      }
+
       setVoices(availableVoices);
 
       // Automatically select Hindi voice if available
@@ -54,10 +62,9 @@ const App = () => {
 
   const readTitle = (title) => {
     if (!selectedVoice) return;
-    const speech = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(title);
     utterance.voice = selectedVoice; // Set the selected voice
-    speech.speak(utterance);
+    window.speechSynthesis.speak(utterance);
   };
 
   const totalPages = Math.ceil(news.length / articlesPerPage);

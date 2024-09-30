@@ -38,21 +38,11 @@ const App = () => {
       }
 
       setVoices(availableVoices);
-
-      // Automatically select Hindi voice if available
-      const hindiVoice = availableVoices.find(
-        (voice) => voice.lang === "hi-IN"
-      );
-      if (hindiVoice) {
-        setSelectedVoice(hindiVoice);
-      } else if (availableVoices.length > 0 && !selectedVoice) {
-        setSelectedVoice(availableVoices[0]); // Fallback to first voice
-      }
     };
 
     handleVoiceChange();
     speechSynthesis.onvoiceschanged = handleVoiceChange; // Update voices when they change
-  }, [selectedVoice]);
+  }, []);
 
   const handleVoiceSelect = (event) => {
     const selectedVoiceName = event.target.value;
@@ -93,6 +83,8 @@ const App = () => {
             onChange={handleVoiceSelect}
             value={selectedVoice?.name || ""}
           >
+            <option value="">Select a voice</option>{" "}
+            {/* Option for no voice selected */}
             {voices.map((voice, index) => (
               <option key={index} value={voice.name}>
                 {voice.name} ({voice.lang})

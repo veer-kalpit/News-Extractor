@@ -11,7 +11,9 @@ const App = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/news");
+        const response = await fetch(
+          "https://backend-news-extractor.vercel.app/"
+        );
         const data = await response.json();
         setNews(data);
         setLoading(false);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const App = () => {
   const [news, setNews] = useState([]);
@@ -31,7 +31,7 @@ const App = () => {
       const availableVoices = speechSynthesis.getVoices();
       setVoices(availableVoices);
 
-      // voice to Hindi
+      // Automatically select Hindi voice if available
       const hindiVoice = availableVoices.find(
         (voice) => voice.lang === "hi-IN"
       );
@@ -45,6 +45,12 @@ const App = () => {
     handleVoiceChange();
     speechSynthesis.onvoiceschanged = handleVoiceChange; // Update voices when they change
   }, [selectedVoice]);
+
+  const handleVoiceSelect = (event) => {
+    const selectedVoiceName = event.target.value;
+    const voice = voices.find((v) => v.name === selectedVoiceName);
+    setSelectedVoice(voice);
+  };
 
   const readTitle = (title) => {
     if (!selectedVoice) return;
@@ -71,6 +77,22 @@ const App = () => {
     <div>
       <div style={{ padding: "20px" }}>
         <h1>Latest News</h1>
+
+        {/* Voice selection dropdown */}
+        <div>
+          <label htmlFor="voiceSelect">Select Voice: </label>
+          <select
+            id="voiceSelect"
+            onChange={handleVoiceSelect}
+            value={selectedVoice?.name || ""}
+          >
+            {voices.map((voice, index) => (
+              <option key={index} value={voice.name}>
+                {voice.name} ({voice.lang})
+              </option>
+            ))}
+          </select>
+        </div>
 
         <ul>
           {currentArticles.map((article, index) => (

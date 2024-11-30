@@ -10,7 +10,7 @@ const getNews = async () => {
 
     // Selector for the headlines and links
     $("a[href*='/articleshow/']").each((index, element) => {
-      const title = $(element).text().trim();
+      const title = $(element).text();
       const link = $(element).attr("href");
 
       // Construct the full link if it's a relative URL

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import SearchBar from "./components/Searchbar";
 
 const App = () => {
   const [news, setNews] = useState([]);
+  const [filteredNews, setFilteredNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVoice, setSelectedVoice] = useState(null);
@@ -16,6 +18,7 @@ const App = () => {
         );
         const data = await response.json();
         setNews(data);
+        setFilteredNews(data); // Initially show all news
         setLoading(false);
       } catch (error) {
         console.error("Error fetching news:", error);
@@ -30,9 +33,7 @@ const App = () => {
     const handleVoiceChange = () => {
       let availableVoices = speechSynthesis.getVoices();
 
-      // Voices might not be available immediately, so retry if empty
       if (availableVoices.length === 0) {
-        // Retry after 100ms
         setTimeout(handleVoiceChange, 100);
         return;
       }
@@ -41,7 +42,7 @@ const App = () => {
     };
 
     handleVoiceChange();
-    speechSynthesis.onvoiceschanged = handleVoiceChange; // Update voices when they change
+    speechSynthesis.onvoiceschanged = handleVoiceChange;
   }, []);
 
   const handleVoiceSelect = (event) => {
@@ -53,14 +54,22 @@ const App = () => {
   const readTitle = (title) => {
     if (!selectedVoice) return;
     const utterance = new SpeechSynthesisUtterance(title);
-    utterance.voice = selectedVoice; // Set the selected voice
+    utterance.voice = selectedVoice;
     window.speechSynthesis.speak(utterance);
   };
 
-  const totalPages = Math.ceil(news.length / articlesPerPage);
+  const handleSearch = (filteredArticles) => {
+    setFilteredNews(filteredArticles);
+    setCurrentPage(1); // Reset to the first page on new search
+  };
+
+  const totalPages = Math.ceil(filteredNews.length / articlesPerPage);
   const indexOfLastArticle = currentPage * articlesPerPage;
   const indexOfFirstArticle = indexOfLastArticle - articlesPerPage;
-  const currentArticles = news.slice(indexOfFirstArticle, indexOfLastArticle);
+  const currentArticles = filteredNews.slice(
+    indexOfFirstArticle,
+    indexOfLastArticle
+  );
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -76,15 +85,20 @@ const App = () => {
         <h1>Latest News</h1>
 
         {/* Voice selection dropdown */}
-        <div>
+        <div style={{ marginBottom: "20px" }}>
           <label htmlFor="voiceSelect">Select Voice: </label>
           <select
             id="voiceSelect"
             onChange={handleVoiceSelect}
             value={selectedVoice?.name || ""}
+            style={{
+              padding: "5px",
+              marginLeft: "10px",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+            }}
           >
-            <option value="">Select a voice</option>{" "}
-            {/* Option for no voice selected */}
+            <option value="">Select a voice</option>
             {voices.map((voice, index) => (
               <option key={index} value={voice.name}>
                 {voice.name} ({voice.lang})
@@ -93,24 +107,69 @@ const App = () => {
           </select>
         </div>
 
-        <ul>
+        <SearchBar
+          placeholder="Search news..."
+          data={news}
+          onSearch={handleSearch}
+        />
+
+        <ul style={{ listStyleType: "none", padding: 0 }}>
           {currentArticles.map((article, index) => (
-            <li key={index} style={{ marginBottom: "10px" }}>
-              <a href={article.link} target="_blank" rel="noopener noreferrer">
+            <li
+              key={index}
+              style={{
+                marginBottom: "10px",
+                padding: "10px",
+                border: "1px solid #ddd",
+                borderRadius: "5px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <a
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none", color: "#007bff" }}
+              >
                 {article.title}
               </a>
               <button
                 onClick={() => readTitle(article.title)}
-                style={{ marginLeft: "10px" }}
+                disabled={!selectedVoice}
+                style={{
+                  marginLeft: "10px",
+                  padding: "5px 10px",
+                  borderRadius: "5px",
+                  border: "none",
+                  backgroundColor: selectedVoice ? "#007bff" : "#ccc",
+                  color: "white",
+                  cursor: selectedVoice ? "pointer" : "not-allowed",
+                }}
               >
                 Read Title
               </button>
             </li>
           ))}
         </ul>
-        <div>
+
+        <div style={{ marginTop: "20px" }}>
           {Array.from({ length: totalPages }, (_, index) => (
-            <button key={index + 1} onClick={() => handlePageChange(index + 1)}>
+            <button
+              key={index + 1}
+              onClick={() => handlePageChange(index + 1)}
+              style={{
+                padding: "5px 10px",
+                margin: "0 5px",
+                border: "1px solid #007bff",
+                borderRadius: "5px",
+                backgroundColor:
+                  currentPage === index + 1 ? "#007bff" : "transparent",
+                color: currentPage === index + 1 ? "white" : "#007bff",
+                cursor: "pointer",
+              }}
+            >
               {index + 1}
             </button>
           ))}

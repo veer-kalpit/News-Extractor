@@ -4,7 +4,7 @@ const cheerio = require("cheerio");
 const getNews = async () => {
   try {
     // Fetch the HTML from the Times of India website
-    const { data } = await axios.get("https://timesofindia.indiatimes.com/");
+    const { data } = await axios.get("https://epaper.hindustantimes.com/");
     const $ = cheerio.load(data);
     let articles = [];
 

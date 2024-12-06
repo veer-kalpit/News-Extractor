@@ -8,6 +8,7 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [voices, setVoices] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const articlesPerPage = 10;
 
   useEffect(() => {
@@ -63,6 +64,17 @@ const App = () => {
     setCurrentPage(1); // Reset to the first page on new search
   };
 
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    if (category === "All") {
+      setFilteredNews(news);
+    } else {
+      const filtered = news.filter((article) => article.category === category);
+      setFilteredNews(filtered);
+    }
+    setCurrentPage(1); // Reset to the first page on filter change
+  };
+
   const totalPages = Math.ceil(filteredNews.length / articlesPerPage);
   const indexOfLastArticle = currentPage * articlesPerPage;
   const indexOfFirstArticle = indexOfLastArticle - articlesPerPage;
@@ -104,6 +116,28 @@ const App = () => {
                 {voice.name} ({voice.lang})
               </option>
             ))}
+          </select>
+        </div>
+
+        {/* Category filter */}
+        <div style={{ marginBottom: "20px" }}>
+          <label htmlFor="categorySelect">Filter by Category: </label>
+          <select
+            id="categorySelect"
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            value={selectedCategory}
+            style={{
+              padding: "5px",
+              marginLeft: "10px",
+              borderRadius: "5px",
+              border: "1px solid #ccc",
+            }}
+          >
+            <option value="All">All</option>
+            <option value="Technology">Technology</option>
+            <option value="Sports">Sports</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Politics">Politics</option>
           </select>
         </div>
 

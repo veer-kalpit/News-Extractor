@@ -1,53 +1,39 @@
-const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
-const cors = require("cors");
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Middleware
-app.use(cors());
-
-// Scraper function
 const getNews = async () => {
   try {
+    // Fetch the HTML from the Times of India website
     const { data } = await axios.get("https://timesofindia.indiatimes.com/");
     const $ = cheerio.load(data);
-    const articles = [];
+    let articles = [];
 
-    $("a[href*='/articleshow/']").each((_, element) => {
-      const title = $(element).text().trim();
+    // Inspect the structure of the page to find the correct selector
+    $("a[href*='/articleshow/']").each((index, element) => {
+      const title = $(element).text().trim(); // Trim whitespace
       const link = $(element).attr("href");
+
+      // Construct the full link if it's a relative URL
       const fullLink = link.startsWith("http")
         ? link
         : `https://timesofindia.indiatimes.com${link}`;
-      const category =
-        $(element).closest("div.some-category-class").text().trim() ||
-        "General"; // Update selector
 
+      // Only add valid entries (non-empty title)
       if (title) {
-        articles.push({ title, link: fullLink, category });
+        articles.push({ title, link: fullLink });
       }
     });
 
+    console.log("Extracted Articles:", articles);
     return articles;
   } catch (error) {
     console.error("Error scraping news:", error.message);
-    throw error;
   }
 };
 
-// Route to fetch news
-app.get("/", async (req, res) => {
-  try {
-    const news = await getNews();
-    res.json(news);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch news" });
-  }
-});
+module.exports = getNews;
 
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
-);
+// Example usage
+getNews().then((articles) => {
+  console.log("Full News Headlines:", articles);
+});

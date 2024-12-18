@@ -173,7 +173,7 @@ const App: React.FC = () => {
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              {article.link}
+              {article.title}
             </a>
             <button
               onClick={() => readTitle(article.title)}

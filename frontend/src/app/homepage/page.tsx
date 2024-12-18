@@ -10,14 +10,14 @@ interface Article {
 
 const App: React.FC = () => {
   const [news, setNews] = useState<Article[]>([]);
-  const [filteredNews, setFilteredNews] = useState<Article[]>([]);
-  console.log(filteredNews);
+  const [filteredNews, setFilteredNews] = useState<Article[]>([]); // Filtered by search
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedVoice, setSelectedVoice] =
     useState<SpeechSynthesisVoice | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
   const articlesPerPage = 10;
 
   const extractCategoryFromUrl = (url: string) => {
@@ -39,7 +39,7 @@ const App: React.FC = () => {
         }));
 
         setNews(articlesWithCategory);
-        setFilteredNews(articlesWithCategory);
+        setFilteredNews(articlesWithCategory); // Initialize with all articles
         setLoading(false);
       } catch (error) {
         console.error("Error fetching news:", error);
@@ -78,8 +78,8 @@ const App: React.FC = () => {
   };
 
   const handleSearch = (filteredArticles: Article[]) => {
-    setFilteredNews(filteredArticles);
-    setCurrentPage(1);
+    setFilteredNews(filteredArticles); // Update filtered news
+    setCurrentPage(1); // Reset to the first page on new search
   };
 
   const handleCategoryChange = (category: string) => {
@@ -88,11 +88,17 @@ const App: React.FC = () => {
   };
 
   const filteredArticles = useMemo(() => {
-    if (selectedCategory === "All") {
-      return news;
-    }
-    return news.filter((article) => article.category === selectedCategory);
-  }, [selectedCategory, news]);
+    const categoryFiltered =
+      selectedCategory === "All"
+        ? news
+        : news.filter((article) => article.category === selectedCategory);
+
+    return filteredNews.length > 0
+      ? categoryFiltered.filter((article) =>
+          filteredNews.some((filtered) => filtered.title === article.title)
+        )
+      : categoryFiltered;
+  }, [selectedCategory, news, filteredNews]);
 
   const totalPages = Math.ceil(filteredArticles.length / articlesPerPage);
   const indexOfLastArticle = currentPage * articlesPerPage;
@@ -157,8 +163,8 @@ const App: React.FC = () => {
 
       <SearchBar
         placeholder="Search news..."
-        data={news}
-        onSearch={handleSearch}
+        data={news} // Full dataset passed to the search bar
+        onSearch={handleSearch} // Updates the filtered articles
       />
 
       <ul className="list-none p-0">
@@ -191,7 +197,6 @@ const App: React.FC = () => {
       </ul>
 
       {/* Pagination */}
-
       <div className="mt-5 flex justify-center">
         {Array.from({ length: totalPages }, (_, index) => (
           <button

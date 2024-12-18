@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import SearchBar from "../components/Searchbar";
 
 interface Article {
@@ -11,6 +11,7 @@ interface Article {
 const App: React.FC = () => {
   const [news, setNews] = useState<Article[]>([]);
   const [filteredNews, setFilteredNews] = useState<Article[]>([]);
+  console.log(filteredNews);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [selectedVoice, setSelectedVoice] =
@@ -19,6 +20,11 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const articlesPerPage = 10;
 
+  const extractCategoryFromUrl = (url: string) => {
+    const urlParts = new URL(url).pathname.split("/").filter((part) => part);
+    return urlParts[0];
+  };
+
   useEffect(() => {
     const fetchNews = async () => {
       try {
@@ -26,8 +32,14 @@ const App: React.FC = () => {
           "https://backend-news-extractor.vercel.app/"
         );
         const data: Article[] = await response.json();
-        setNews(data);
-        setFilteredNews(data); // Initially show all news
+
+        const articlesWithCategory = data.map((article) => ({
+          ...article,
+          category: extractCategoryFromUrl(article.link),
+        }));
+
+        setNews(articlesWithCategory);
+        setFilteredNews(articlesWithCategory);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching news:", error);
@@ -41,12 +53,10 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleVoiceChange = () => {
       const availableVoices = speechSynthesis.getVoices();
-
       if (availableVoices.length === 0) {
         setTimeout(handleVoiceChange, 100);
         return;
       }
-
       setVoices(availableVoices);
     };
 
@@ -69,24 +79,25 @@ const App: React.FC = () => {
 
   const handleSearch = (filteredArticles: Article[]) => {
     setFilteredNews(filteredArticles);
-    setCurrentPage(1); // Reset to the first page on new search
+    setCurrentPage(1);
   };
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    if (category === "All") {
-      setFilteredNews(news);
-    } else {
-      const filtered = news.filter((article) => article.category === category);
-      setFilteredNews(filtered);
-    }
-    setCurrentPage(1); // Reset to the first page on filter change
+    setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(filteredNews.length / articlesPerPage);
+  const filteredArticles = useMemo(() => {
+    if (selectedCategory === "All") {
+      return news;
+    }
+    return news.filter((article) => article.category === selectedCategory);
+  }, [selectedCategory, news]);
+
+  const totalPages = Math.ceil(filteredArticles.length / articlesPerPage);
   const indexOfLastArticle = currentPage * articlesPerPage;
   const indexOfFirstArticle = indexOfLastArticle - articlesPerPage;
-  const currentArticles = filteredNews.slice(
+  const currentArticles = filteredArticles.slice(
     indexOfFirstArticle,
     indexOfLastArticle
   );
@@ -100,7 +111,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="p-5">
+    <div className="p-5 w-full max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-5 text-center">News Extractor</h1>
 
       {/* Voice selection dropdown */}
@@ -112,7 +123,7 @@ const App: React.FC = () => {
           id="voiceSelect"
           onChange={handleVoiceSelect}
           value={selectedVoice?.name || ""}
-          className="ml-3 p-2 rounded border border-gray-300"
+          className="ml-3 p-2 rounded border border-gray-300 w-full sm:w-auto"
         >
           <option value="">Select a voice</option>
           {voices.map((voice, index) => (
@@ -132,13 +143,15 @@ const App: React.FC = () => {
           id="categorySelect"
           onChange={(e) => handleCategoryChange(e.target.value)}
           value={selectedCategory}
-          className="ml-3 p-2 rounded border border-gray-300"
+          className="ml-3 p-2 rounded border border-gray-300 w-full sm:w-auto"
         >
           <option value="All">All</option>
-          <option value="Technology">Technology</option>
-          <option value="Sports">Sports</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Politics">Politics</option>
+          <option value="entertainment">Entertainment</option>
+          <option value="sports">Sports</option>
+          <option value="technology">Technology</option>
+          <option value="education">Education</option>
+          <option value="astrology">Astrology</option>
+          <option value="life-style">Life-style</option>
         </select>
       </div>
 
@@ -160,7 +173,7 @@ const App: React.FC = () => {
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              {article.title}
+              {article.link}
             </a>
             <button
               onClick={() => readTitle(article.title)}
@@ -176,6 +189,8 @@ const App: React.FC = () => {
           </li>
         ))}
       </ul>
+
+      {/* Pagination */}
 
       <div className="mt-5 flex justify-center">
         {Array.from({ length: totalPages }, (_, index) => (

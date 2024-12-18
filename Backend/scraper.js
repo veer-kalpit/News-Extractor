@@ -10,8 +10,8 @@ const getNews = async () => {
 
     // Inspect the structure of the page to find the correct selector
     $("a[href*='/articleshow/']").each((index, element) => {
-      const title = $(element).text().trim(); // Trim whitespace
-      const link = $(element).attr("href");
+      const title = $(element).text().trim(); // Get the title
+      const link = $(element).attr("href"); // Get the link
 
       // Construct the full link if it's a relative URL
       const fullLink = link.startsWith("http")
@@ -35,5 +35,5 @@ module.exports = getNews;
 
 // Example usage
 getNews().then((articles) => {
-  console.log("Full News Headlines:", articles);
+  console.log("Full News Links and Titles:", articles);
 });

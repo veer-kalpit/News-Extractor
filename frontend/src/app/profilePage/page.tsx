@@ -39,11 +39,6 @@ const ProfilePage = () => {
                 Email: {user.email}
               </p>
             </div>
-            <div className="mb-4">
-              <p className="text-lg font-medium text-gray-800 text-center">
-                Display Name: {user.displayName || "No display name set"}
-              </p>
-            </div>
           </>
         )}
       </div>

@@ -20,15 +20,17 @@ const SignUp = () => {
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
+    // Check if any field is empty
     if (!email || !password || !fullName) {
       alert("Please fill out all fields");
       return;
     }
 
     try {
+      // Create the user
       await createUserWithEmailAndPassword(email, password);
       alert(`Welcome, ${fullName}!`);
-      router.push("/signin"); // Redirect to dashboard or another page
+      router.push("/signin"); // Redirect to the SignIn page
     } catch (err) {
       console.error("Sign-up error: ", err);
     }

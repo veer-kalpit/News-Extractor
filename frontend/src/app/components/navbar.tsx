@@ -24,12 +24,6 @@ const Navbar = () => {
             <Link href="/profilePage">
               <p className="hover:text-yellow-400">Profile</p>
             </Link>
-            <Link href="/about">
-              <p className="hover:text-yellow-400">About</p>
-            </Link>
-            <Link href="/contact">
-              <p className="hover:text-yellow-400">Contact</p>
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -68,16 +62,6 @@ const Navbar = () => {
             <Link href="/profilePage">
               <p className="block text-black hover:bg-gray-600 hover:text-yellow-400 px-3 py-2 rounded-md">
                 Profile Page
-              </p>
-            </Link>
-            <Link href="/about">
-              <p className="block text-black hover:bg-gray-600 hover:text-yellow-400 px-3 py-2 rounded-md">
-                About
-              </p>
-            </Link>
-            <Link href="/contact">
-              <p className="block text-black hover:bg-gray-600 hover:text-yellow-400 px-3 py-2 rounded-md">
-                Contact
               </p>
             </Link>
           </div>

@@ -15,7 +15,7 @@ const ProfilePage = () => {
         setUser(currentUser);
       } else {
         // Redirect to login if not authenticated
-        window.location.href = "/login";
+        window.location.href = "/signin";
       }
       setIsLoading(false);
     });

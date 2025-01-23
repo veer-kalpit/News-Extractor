@@ -163,8 +163,8 @@ const App: React.FC = () => {
 
       <SearchBar
         placeholder="Search news..."
-        data={news} // Full dataset passed to the search bar
-        onSearch={handleSearch} // Updates the filtered articles
+        data={news} 
+        onSearch={handleSearch} 
       />
 
       <ul className="list-none p-0">

@@ -1,24 +1,28 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
+
+import { useEffect, useState } from "react";
+import Navbar from "../components/navbar";
 import SearchBar from "../components/Searchbar";
+import Footer from "../components/footer";
 
 interface Article {
   title: string;
   link: string;
+  image: string;
   category: string;
 }
 
 const App: React.FC = () => {
   const [news, setNews] = useState<Article[]>([]);
-  const [filteredNews, setFilteredNews] = useState<Article[]>([]); // Filtered by search
+  const [filteredNews, setFilteredNews] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [selectedVoice, setSelectedVoice] =
-    useState<SpeechSynthesisVoice | null>(null);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedVoice, setSelectedVoice] = useState<string>("");
 
-  const articlesPerPage = 10;
+  const articlesPerPage = 9; // Limit news cards to 9 per page
 
   const extractCategoryFromUrl = (url: string) => {
     const urlParts = new URL(url).pathname.split("/").filter((part) => part);
@@ -48,33 +52,24 @@ const App: React.FC = () => {
     };
 
     fetchNews();
-  }, []);
 
-  useEffect(() => {
-    const handleVoiceChange = () => {
-      const availableVoices = speechSynthesis.getVoices();
-      if (availableVoices.length === 0) {
-        setTimeout(handleVoiceChange, 100);
-        return;
-      }
+    // Load available voices for speech synthesis
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
       setVoices(availableVoices);
+      if (availableVoices.length > 0) {
+        setSelectedVoice(availableVoices[0].name);
+      }
     };
 
-    handleVoiceChange();
-    speechSynthesis.onvoiceschanged = handleVoiceChange;
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
   }, []);
 
-  const handleVoiceSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedVoiceName = event.target.value;
-    const voice = voices.find((v) => v.name === selectedVoiceName);
-    setSelectedVoice(voice || null);
-  };
-
-  const readTitle = (title: string) => {
-    if (!selectedVoice) return;
-    const utterance = new SpeechSynthesisUtterance(title);
-    utterance.voice = selectedVoice;
-    window.speechSynthesis.speak(utterance);
+  const handleSearchToggle = () => {
+    setIsSearchVisible((prev) => !prev);
   };
 
   const handleSearch = (filteredArticles: Article[]) => {
@@ -84,32 +79,37 @@ const App: React.FC = () => {
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
+    setFilteredNews(
+      category === "all"
+        ? news
+        : news.filter((article) => article.category.toLowerCase() === category)
+    );
     setCurrentPage(1);
   };
 
-  const filteredArticles = useMemo(() => {
-    const categoryFiltered =
-      selectedCategory === "All"
-        ? news
-        : news.filter((article) => article.category === selectedCategory);
-
-    return filteredNews.length > 0
-      ? categoryFiltered.filter((article) =>
-          filteredNews.some((filtered) => filtered.title === article.title)
-        )
-      : categoryFiltered;
-  }, [selectedCategory, news, filteredNews]);
-
-  const totalPages = Math.ceil(filteredArticles.length / articlesPerPage);
+  const totalPages = Math.ceil(filteredNews.length / articlesPerPage);
   const indexOfLastArticle = currentPage * articlesPerPage;
   const indexOfFirstArticle = indexOfLastArticle - articlesPerPage;
-  const currentArticles = filteredArticles.slice(
+  const currentArticles = filteredNews.slice(
     indexOfFirstArticle,
     indexOfLastArticle
   );
 
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
+  const handlePageChange = (direction: "prev" | "next") => {
+    if (direction === "prev" && currentPage > 1) {
+      setCurrentPage((prevPage) => prevPage - 1);
+    } else if (direction === "next" && currentPage < totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  };
+
+  const handleReadAloud = (text: string) => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voice = voices.find((v) => v.name === selectedVoice);
+      if (voice) utterance.voice = voice;
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   if (loading) {
@@ -117,101 +117,126 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="p-5 w-full max-w-6xl mx-auto">
-     
+    <div>
+      <Navbar onSearchToggle={handleSearchToggle} />
+      <div className="p-5 w-full max-w-6xl mx-auto">
+        {isSearchVisible && (
+          <div className="mb-5">
+            <SearchBar
+              placeholder="Search news..."
+              data={news} // Full dataset passed to the search bar
+              onSearch={handleSearch} // Updates the filtered articles
+            />
+          </div>
+        )}
 
-      {/* Voice selection dropdown */}
-      <div className="mb-5">
-        <label htmlFor="voiceSelect" className="font-medium">
-          Select Voice:{" "}
-        </label>
-        <select
-          id="voiceSelect"
-          onChange={handleVoiceSelect}
-          value={selectedVoice?.name || ""}
-          className="ml-3 p-2 rounded border border-gray-300 w-full sm:w-auto"
-        >
-          <option value="">Select a voice</option>
-          {voices.map((voice, index) => (
-            <option key={index} value={voice.name}>
-              {voice.name} ({voice.lang})
-            </option>
+        {/* Voice Selection */}
+        <div className="mb-5">
+          <p className="font-medium text-lg text-center mb-3">Select Voice:</p>
+          <select
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value)}
+            className="block mx-auto border border-gray-300 p-2 rounded"
+          >
+            {voices.map((voice) => (
+              <option key={voice.name} value={voice.name}>
+                {voice.name} ({voice.lang})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Category filter as a Navbar */}
+        <div className="mb-5">
+          <p className="font-medium text-lg text-center mb-3">
+            Filter News by Category:
+          </p>
+          <div className="flex justify-center space-x-4">
+            {[
+              { label: "All", value: "all" },
+              { label: "Entertainment", value: "entertainment" },
+              { label: "Sports", value: "sports" },
+              { label: "Technology", value: "technology" },
+              { label: "Education", value: "education" },
+              { label: "Astrology", value: "astrology" },
+              { label: "Life-style", value: "life-style" },
+            ].map((category) => (
+              <button
+                key={category.value}
+                onClick={() => handleCategoryChange(category.value)}
+                className={`px-4 py-2 rounded ${selectedCategory === category.value
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-200 text-gray-700 hover:bg-blue-500 hover:text-white"
+                  }`}
+              >
+                {category.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* News Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {currentArticles.map((article, index) => (
+            <div
+              key={index}
+              className="p-4 border border-gray-200 rounded shadow-md transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+            >
+              <a
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-lg font-semibold text-blue-600 hover:underline"
+              >
+                {article.title}
+              </a>
+              <p className="text-sm text-gray-500 mt-2">
+                Category: {article.category}
+              </p>
+              <img
+                src={article.image?.startsWith("http") ? article.image : "/news-default.jpg"}
+                alt="News Thumbnail"
+                className="w-full h-40 object-cover mt-3 rounded"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/news-default.jpg"; // Fallback to a default image
+                }}
+              />
+
+              <button
+                onClick={() => handleReadAloud(article.title)}
+                className="mt-3 px-3 py-1 rounded bg-green-500 text-white hover:bg-green-700"
+              >
+                Read Aloud
+              </button>
+            </div>
           ))}
-        </select>
-      </div>
+        </div>
 
-      {/* Category filter */}
-      <div className="mb-5">
-        <label htmlFor="categorySelect" className="font-medium">
-          Filter by Category:{" "}
-        </label>
-        <select
-          id="categorySelect"
-          onChange={(e) => handleCategoryChange(e.target.value)}
-          value={selectedCategory}
-          className="ml-3 p-2 rounded border border-gray-300 w-full sm:w-auto"
-        >
-          <option value="All">All</option>
-          <option value="entertainment">Entertainment</option>
-          <option value="sports">Sports</option>
-          <option value="technology">Technology</option>
-          <option value="education">Education</option>
-          <option value="astrology">Astrology</option>
-          <option value="life-style">Life-style</option>
-        </select>
-      </div>
-
-      <SearchBar
-        placeholder="Search news..."
-        data={news} // Full dataset passed to the search bar
-        onSearch={handleSearch} // Updates the filtered articles
-      />
-
-      <ul className="list-none p-0">
-        {currentArticles.map((article, index) => (
-          <li
-            key={index}
-            className="mb-3 p-3 border border-gray-200 rounded flex justify-between items-center"
-          >
-            <a
-              href={article.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              {article.title}
-            </a>
-            <button
-              onClick={() => readTitle(article.title)}
-              disabled={!selectedVoice}
-              className={`ml-3 px-3 py-1 rounded text-white ${
-                selectedVoice
-                  ? "bg-blue-500 hover:bg-blue-700"
-                  : "bg-gray-400 cursor-not-allowed"
-              }`}
-            >
-              Read Title
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {/* Pagination */}
-      <div className="mt-5 flex justify-center">
-        {Array.from({ length: totalPages }, (_, index) => (
+        {/* Pagination */}
+        <div className="mt-5 flex justify-between">
           <button
-            key={index + 1}
-            onClick={() => handlePageChange(index + 1)}
-            className={`px-3 py-1 mx-1 border rounded ${
-              currentPage === index + 1
-                ? "bg-blue-500 text-white"
-                : "border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white"
-            }`}
+            onClick={() => handlePageChange("prev")}
+            disabled={currentPage === 1}
+            className={`px-4 py-2 rounded ${currentPage === 1
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-700"
+              }`}
           >
-            {index + 1}
+            Previous
           </button>
-        ))}
+          <button
+            onClick={() => handlePageChange("next")}
+            disabled={currentPage === totalPages}
+            className={`px-4 py-2 rounded ${currentPage === totalPages
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-700"
+              }`}
+          >
+            Next
+          </button>
+        </div>
       </div>
+      <Footer/>
     </div>
   );
 };

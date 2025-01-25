@@ -3,29 +3,35 @@ const cheerio = require("cheerio");
 
 const getNews = async () => {
   try {
-    // Fetch the HTML from the Times of India website
     const { data } = await axios.get("https://timesofindia.indiatimes.com/");
     const $ = cheerio.load(data);
     let articles = [];
 
-    // Inspect the structure of the page to find the correct selector
+    // Scrape news articles
     $("a[href*='/articleshow/']").each((index, element) => {
-      const title = $(element).text().trim(); // Get the title
-      const link = $(element).attr("href"); // Get the link
-
-      // Construct the full link if it's a relative URL
+      const title = $(element).text().trim();
+      const link = $(element).attr("href");
       const fullLink = link.startsWith("http")
         ? link
         : `https://timesofindia.indiatimes.com${link}`;
 
-      // Only add valid entries (non-empty title)
-      if (title) {
-        articles.push({ title, link: fullLink });
+      // Locate the image tag related to this article
+      const image = $(element).find("img").attr("data-src") || $(element).find("img").attr("src") || ""; // Check for lazy-loaded images
+
+      if (title && link) {
+        articles.push({ title, link: fullLink, image });
       }
     });
 
-    console.log("Extracted Articles:", articles);
-    return articles;
+    // Filter out articles with no title or duplicate titles
+    const uniqueArticles = articles.filter(
+      (article, index, self) =>
+        article.title &&
+        self.findIndex((a) => a.title === article.title) === index
+    );
+
+    console.log("Extracted Articles with Images:", uniqueArticles);
+    return uniqueArticles;
   } catch (error) {
     console.error("Error scraping news:", error.message);
   }
@@ -35,5 +41,5 @@ module.exports = getNews;
 
 // Example usage
 getNews().then((articles) => {
-  console.log("Full News Links and Titles:", articles);
+  console.log(articles);
 });

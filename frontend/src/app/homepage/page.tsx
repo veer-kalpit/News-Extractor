@@ -4,13 +4,9 @@ import { useEffect, useState } from "react";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/Searchbar";
 import Footer from "../components/footer";
+// import Image from "next/image";
 
-interface Article {
-  title: string;
-  link: string;
-  image: string;
-  category: string;
-}
+import { Article } from "../../types/Articles";
 
 const App: React.FC = () => {
   const [news, setNews] = useState<Article[]>([]);
@@ -124,8 +120,8 @@ const App: React.FC = () => {
           <div className="mb-5">
             <SearchBar
               placeholder="Search news..."
-              data={news} // Full dataset passed to the search bar
-              onSearch={handleSearch} // Updates the filtered articles
+              data={news} 
+              onSearch={handleSearch} 
             />
           </div>
         )}
@@ -133,7 +129,11 @@ const App: React.FC = () => {
         {/* Voice Selection */}
         <div className="mb-5">
           <p className="font-medium text-lg text-center mb-3">Select Voice:</p>
+          <label htmlFor="voice-select" className="sr-only">
+            Select a voice
+          </label>
           <select
+            id="voice-select"
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value)}
             className="block mx-auto border border-gray-300 p-2 rounded"
@@ -180,7 +180,7 @@ const App: React.FC = () => {
           {currentArticles.map((article, index) => (
             <div
               key={index}
-              className="p-4 border border-gray-200 rounded shadow-md transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+              className="p-4 border flex flex-col justify-between items-center border-gray-200 rounded shadow-md transition-transform duration-200 hover:scale-105 hover:shadow-lg"
             >
               <a
                 href={article.link}
@@ -193,18 +193,18 @@ const App: React.FC = () => {
               <p className="text-sm text-gray-500 mt-2">
                 Category: {article.category}
               </p>
-              <img
+              {/* <img
                 src={article.image?.startsWith("http") ? article.image : "/news-default.jpg"}
                 alt="News Thumbnail"
                 className="w-full h-40 object-cover mt-3 rounded"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/news-default.jpg"; // Fallback to a default image
                 }}
-              />
+              /> */}
 
               <button
                 onClick={() => handleReadAloud(article.title)}
-                className="mt-3 px-3 py-1 rounded bg-green-500 text-white hover:bg-green-700"
+                className="mt-3 px-3 py-1 rounded bg-green-500 text-white hover:bg-green-700 w-full"
               >
                 Read Aloud
               </button>

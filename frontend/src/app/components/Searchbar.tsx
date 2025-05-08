@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Article } from "../../types/Articles";
 
-interface Article {
-  title: string;
-  link: string;
-  category: string;
+interface SearchBarProps {
+  placeholder?: string;
+  data: Article[];
+  onSearch: (filteredData: Article[]) => void;
 }
 
 interface SearchBarProps {
